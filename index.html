@@ -39,7 +39,7 @@ body{margin:0;padding:20px}
 .line.lv3{padding-left:3.1em}
 .line.plain{display:block;padding-left:0}
 .line.cont .marker{visibility:hidden}
-.marker{user-select:none;color:#222;font-family:"Yu Gothic","YuGothic",sans-serif;font-size:.78em;line-height:2.18}
+.marker{user-select:none;color:#222;font-family:"Yu Gothic","YuGothic",sans-serif;font-size:1em;line-height:1.7}
 .text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:inline-block;min-height:1.7em;width:100%;vertical-align:top}
 .text:empty:before{content:"";color:#aaa;pointer-events:none}
 .line:not(.first) .text:empty:before{content:""}
@@ -52,7 +52,7 @@ body{margin:0;padding:20px}
 .doc-title{margin:0 0 18pt;font-size:11pt;font-weight:400;line-height:18pt}
 .prow{display:grid;grid-template-columns:1.6em 1fr;line-height:1.35}
 .prow.lv1{padding-left:0}.prow.lv2{padding-left:1.45em}.prow.lv3{padding-left:2.9em}
-.pmark{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:.78em;line-height:1.75}.prow.cont .pmark{visibility:hidden}.prow.plain{display:block;padding-left:0}
+.pmark{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:1em;line-height:1.35}.prow.cont .pmark{visibility:hidden}.prow.plain{display:block;padding-left:0}
 .prow.blank{height:1.35em;display:block}
 .bold{font-weight:700}.redtxt{color:#d00000}
 .tip{background:#f7f7f8;border:1px solid #e1e2e5;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.65;color:#555}
@@ -81,8 +81,8 @@ kbd{font:11px inherit;border:1px solid #c8cbd0;border-bottom-width:2px;border-ra
       <div class="toolbar">
         <div class="level-group" aria-label="箇条書きの種類">
           <button class="toolbtn levelbtn" data-level="0" type="button">本文</button>
-          <button class="toolbtn levelbtn bullet-choice" data-level="1" data-marker="small-square" type="button" title="小さい四角">▪</button>
-          <button class="toolbtn levelbtn bullet-choice" data-level="2" data-marker="circle" type="button" title="丸">○</button>
+          <button class="toolbtn levelbtn bullet-choice" data-level="1" data-marker="small-square" type="button" title="小さい四角">￭</button>
+          <button class="toolbtn levelbtn bullet-choice" data-level="2" data-marker="circle" type="button" title="丸">￮</button>
           <button class="toolbtn levelbtn bullet-choice" data-level="3" data-marker="star" type="button" title="星">✦</button>
         </div>
         <button class="toolbtn" id="noMarkerBtn" type="button">記号を消す</button>
@@ -91,7 +91,7 @@ kbd{font:11px inherit;border:1px solid #c8cbd0;border-bottom-width:2px;border-ra
         <button class="toolbtn red" id="redBtn" type="button">赤字</button>
         <button class="toolbtn" id="blackBtn" type="button">黒字</button>
       </div>
-      <div class="help">箇条書きは「▪」「○」「✦」の3種類です。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
+      <div class="help">箇条書きは「￭」「￮」「✦」の3種類です。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
 
       <div id="editor" class="editor" aria-label="本文エディタ"></div>
 
@@ -149,8 +149,8 @@ function todayTitle(){
 titleInput.value = todayTitle();
 
 function markerFor(level,marker){
-  if(level===0) return '▪';
-  if(level===1) return '○';
+  if(level===0) return '￭';
+  if(level===1) return '￮';
   return '✦';
 }
 
@@ -511,7 +511,7 @@ document.getElementById('blackBtn').onmousedown=e=>{e.preventDefault();restoreEd
 titleInput.addEventListener('input',render);
 
 
-const STORAGE_KEY='stageHandoverEditorState_v4';
+const STORAGE_KEY='stageHandoverEditorState_v5';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -542,7 +542,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:4,
+      version:5,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -710,7 +710,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:4,
+    version:5,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
@@ -846,10 +846,10 @@ async function patchNumbering(zip){
 
   let xml=await f.async('string');
 
-  const clean=`<w:abstractNum w:abstractNumId="3"><w:multiLevelType w:val="multilevel"/>`+
-    `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="▪"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
-    `<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="○"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="640" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
-    `<w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="✦"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1080" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="15"/><w:szCs w:val="15"/></w:rPr></w:lvl>`+
+  const clean=`<w:abstractNum w:abstractNumId="3"><w:multiLevelType w:val="hybridMultilevel"/>`+
+    `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="￭"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic" w:hint="eastAsia"/><w:color w:val="auto"/></w:rPr></w:lvl>`+
+    `<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="￮"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="640" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic" w:hint="eastAsia"/></w:rPr></w:lvl>`+
+    `<w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="✦"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1080" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic" w:hint="eastAsia"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
     `</w:abstractNum>`;
 
   const a=xml.indexOf('<w:abstractNum w:abstractNumId="3"');
@@ -858,7 +858,6 @@ async function patchNumbering(zip){
     if(ae>=0) xml=xml.slice(0,a)+clean+xml.slice(ae+16);
   }
 
-  // Remove custom stale definitions from prior versions.
   xml=xml.replace(/<w:abstractNum w:abstractNumId="99"[\s\S]*?<\/w:abstractNum>/g,'');
   xml=xml.replace(/<w:num w:numId="99"[\s\S]*?<\/w:num>/g,'');
 
@@ -885,3 +884,8 @@ if(!restoreState()) resetEditor();
 </script>
 </body>
 </html>
+
+<style>
+.line.lv3:not(.plain) .marker{font-size:.78em;line-height:2.18}
+.prow.lv3 .pmark{font-size:.78em;line-height:1.75}
+</style>
