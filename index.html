@@ -29,7 +29,6 @@ body{margin:0;padding:20px}
 .level-group .toolbtn:last-child{border-right:0}
 .level-group .toolbtn.active{background:#111;color:#fff}
 .level-group .bullet-choice{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:15px;min-width:38px}
-.level-group .bullet-large{font-size:17px}
 
 .help{font-size:12px;color:#777;line-height:1.55;margin:0 0 10px}
 .editor{border:1px solid #bfc4cc;border-radius:9px;min-height:470px;padding:14px;background:#fff}
@@ -41,7 +40,6 @@ body{margin:0;padding:20px}
 .line.plain{display:block;padding-left:0}
 .line.cont .marker{visibility:hidden}
 .marker{user-select:none;color:#222;font-family:"Yu Gothic","YuGothic",sans-serif;font-size:.78em;line-height:2.18}
-.line.lv1:not(.plain) .marker{font-size:1em;line-height:1.7}
 .text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:inline-block;min-height:1.7em;width:100%;vertical-align:top}
 .text:empty:before{content:"";color:#aaa;pointer-events:none}
 .line:not(.first) .text:empty:before{content:""}
@@ -54,8 +52,7 @@ body{margin:0;padding:20px}
 .doc-title{margin:0 0 18pt;font-size:11pt;font-weight:400;line-height:18pt}
 .prow{display:grid;grid-template-columns:1.6em 1fr;line-height:1.35}
 .prow.lv1{padding-left:0}.prow.lv2{padding-left:1.45em}.prow.lv3{padding-left:2.9em}
-.pmark{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:.78em;line-height:1.75}
-.prow.lv1 .pmark{font-size:1em;line-height:1.35}.prow.cont .pmark{visibility:hidden}.prow.plain{display:block;padding-left:0}
+.pmark{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:.78em;line-height:1.75}.prow.cont .pmark{visibility:hidden}.prow.plain{display:block;padding-left:0}
 .prow.blank{height:1.35em;display:block}
 .bold{font-weight:700}.redtxt{color:#d00000}
 .tip{background:#f7f7f8;border:1px solid #e1e2e5;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.65;color:#555}
@@ -84,10 +81,9 @@ kbd{font:11px inherit;border:1px solid #c8cbd0;border-bottom-width:2px;border-ra
       <div class="toolbar">
         <div class="level-group" aria-label="箇条書きの種類">
           <button class="toolbtn levelbtn" data-level="0" type="button">本文</button>
-          <button class="toolbtn levelbtn bullet-choice bullet-large" data-level="1" data-marker="large-square" type="button" title="同じ位置・大きい四角">■</button>
-          <button class="toolbtn levelbtn bullet-choice" data-level="1" data-marker="small-square" type="button" title="同じ位置・小さい四角">￭</button>
-          <button class="toolbtn levelbtn bullet-choice" data-level="2" data-marker="circle" type="button" title="1段下">￮</button>
-          <button class="toolbtn levelbtn bullet-choice" data-level="3" data-marker="star" type="button" title="2段下">✦</button>
+          <button class="toolbtn levelbtn bullet-choice" data-level="1" data-marker="small-square" type="button" title="小さい四角">▪</button>
+          <button class="toolbtn levelbtn bullet-choice" data-level="2" data-marker="circle" type="button" title="丸">○</button>
+          <button class="toolbtn levelbtn bullet-choice" data-level="3" data-marker="star" type="button" title="星">✦</button>
         </div>
         <button class="toolbtn" id="noMarkerBtn" type="button">記号を消す</button>
         <span class="sep"></span>
@@ -95,7 +91,7 @@ kbd{font:11px inherit;border:1px solid #c8cbd0;border-bottom-width:2px;border-ra
         <button class="toolbtn red" id="redBtn" type="button">赤字</button>
         <button class="toolbtn" id="blackBtn" type="button">黒字</button>
       </div>
-      <div class="help">「■」と「￭」は同じ位置で、記号の大きさだけが違います。「￮」「✦」はそれぞれ1段ずつ下がります。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
+      <div class="help">箇条書きは「▪」「○」「✦」の3種類です。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
 
       <div id="editor" class="editor" aria-label="本文エディタ"></div>
 
@@ -153,12 +149,12 @@ function todayTitle(){
 titleInput.value = todayTitle();
 
 function markerFor(level,marker){
-  if(level===0) return marker==='small-square'?'￭':'■';
-  if(level===1) return '￮';
+  if(level===0) return '▪';
+  if(level===1) return '○';
   return '✦';
 }
 
-function makeLine({level=0,type='bullet',marker='large-square',html='',first=false}={}){
+function makeLine({level=0,type='bullet',marker='small-square',html='',first=false}={}){
   const row=document.createElement('div');
   row.className=`line lv${level+1} ${type==='continue'?'cont':''} ${type==='plain'?'plain':''} ${first?'first':''}`;
   row.dataset.level=level; row.dataset.type=type; row.dataset.marker=marker; row.dataset.marker=marker;
@@ -181,7 +177,7 @@ function makeLine({level=0,type='bullet',marker='large-square',html='',first=fal
 
 function resetEditor(){
   editor.innerHTML='';
-  const row=makeLine({first:true});
+  const row=makeLine({level:0,type:'plain',marker:'small-square',html:'',first:true});
   render();
   placeCaret(row.querySelector('.text'),false);
 }
@@ -233,7 +229,7 @@ function placeCaret(el,atEnd=true){
   savedSelection=r.cloneRange();
 }
 
-function rebuildLine(line,{level=Number(line.dataset.level),type=line.dataset.type,marker=line.dataset.marker||'large-square'}={}){
+function rebuildLine(line,{level=Number(line.dataset.level),type=line.dataset.type,marker=line.dataset.marker||'small-square'}={}){
   const html=line.querySelector('.text').innerHTML;
   const isFirst=line===editor.firstElementChild;
   const next=line.nextElementSibling;
@@ -262,7 +258,7 @@ function insertAfterCurrent(type){
   let level=line?.dataset.type==='plain'?0:Number(line?.dataset.level||0);
   const row=document.createElement('div');
   row.className=`line lv${level+1} ${type==='continue'?'cont':''} ${type==='plain'?'plain':''}`;
-  row.dataset.level=level;row.dataset.type=type;row.dataset.marker=line?.dataset.marker||'large-square';
+  row.dataset.level=level;row.dataset.type=type;row.dataset.marker=line?.dataset.marker||'small-square';
   if(type!=='plain'){
     const mark=document.createElement('span');mark.className='marker';mark.textContent=markerFor(level,row.dataset.marker);row.appendChild(mark);
   }
@@ -292,7 +288,7 @@ editor.addEventListener('keydown',e=>{
     row.className='line lv1 plain';
     row.dataset.level=0;
     row.dataset.type='plain';
-    row.dataset.marker='large-square';
+    row.dataset.marker='small-square';
 
     const nt=document.createElement('span');
     nt.className='text';
@@ -419,7 +415,7 @@ editor.addEventListener('paste',e=>{
       row.className='line lv1 plain';
       row.dataset.level=0;
       row.dataset.type='plain';
-      row.dataset.marker='large-square';
+      row.dataset.marker='small-square';
 
       const t=document.createElement('span');
       t.className='text';
@@ -452,13 +448,10 @@ function setSelectedLevel(uiLevel,markerChoice=null){
 
   let row;
   if(uiLevel===0){
-    row=rebuildLine(line,{level:0,type:'plain',marker:'large-square'});
+    row=rebuildLine(line,{level:0,type:'plain',marker:'small-square'});
   }else{
     const internalLevel=uiLevel-1;
-    let marker='large-square';
-    if(internalLevel===0) marker=markerChoice||line.dataset.marker||'large-square';
-    else if(internalLevel===1) marker='circle';
-    else marker='star';
+    const marker=internalLevel===0?'small-square':internalLevel===1?'circle':'star';
     row=rebuildLine(line,{level:internalLevel,type:'bullet',marker});
   }
   placeCaret(row.querySelector('.text'));
@@ -484,14 +477,7 @@ function updateLevelButtons(line=currentLine()){
   if(!line)return;
 
   const uiLevel=line.dataset.type==='plain'?0:Number(line.dataset.level)+1;
-  let selector=`.levelbtn[data-level="${uiLevel}"]`;
-
-  if(uiLevel===1){
-    const marker=line.dataset.marker==='small-square'?'small-square':'large-square';
-    selector+=`[data-marker="${marker}"]`;
-  }
-
-  const btn=document.querySelector(selector);
+  const btn=document.querySelector(`.levelbtn[data-level="${uiLevel}"]`);
   if(btn)btn.classList.add('active');
 
   const nm=document.getElementById('noMarkerBtn');
@@ -525,7 +511,7 @@ document.getElementById('blackBtn').onmousedown=e=>{e.preventDefault();restoreEd
 titleInput.addEventListener('input',render);
 
 
-const STORAGE_KEY='stageHandoverEditorState_v2';
+const STORAGE_KEY='stageHandoverEditorState_v4';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -540,12 +526,12 @@ function runsToHtml(runs){
 
 function setRows(rows){
   editor.innerHTML='';
-  const safeRows=(rows&&rows.length)?rows:[{level:0,type:'bullet',runs:[]}];
+  const safeRows=(rows&&rows.length)?rows:[{level:0,type:'plain',marker:'small-square',runs:[]}];
   safeRows.forEach((r,i)=>{
     makeLine({
       level:Math.max(0,Math.min(3,Number(r.level)||0)),
       type:['bullet','continue','plain'].includes(r.type)?r.type:'bullet',
-      marker:r.marker||'large-square',
+      marker:r.marker||'small-square',
       html:runsToHtml(r.runs||[]),
       first:i===0
     });
@@ -556,7 +542,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:2,
+      version:4,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -646,7 +632,7 @@ function mergeRuns(runs){
 
 function parseParagraphXml(p){
   const pPr=childEls(p,'pPr')[0] || null;
-  let level=0, type='plain', marker='large-square';
+  let level=0, type='plain', marker='small-square';
   if(pPr){
     const numPr=childEls(pPr,'numPr')[0];
     if(numPr){
@@ -654,9 +640,7 @@ function parseParagraphXml(p){
       const ilvl=firstDesc(numPr,'ilvl');
       const v=ilvl ? (ilvl.getAttributeNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main','val') || ilvl.getAttribute('w:val') || ilvl.getAttribute('val')) : '0';
       level=Math.max(0,Math.min(2,parseInt(v||'0',10)||0));
-      const numIdEl=firstDesc(numPr,'numId');
-      const numIdVal=numIdEl ? (numIdEl.getAttributeNS('http://schemas.openxmlformats.org/wordprocessingml/2006/main','val') || numIdEl.getAttribute('w:val') || numIdEl.getAttribute('val')) : '4';
-      marker=(level===0 && numIdVal==='5')?'small-square':(level===0?'large-square':level===1?'circle':'star');
+      marker=level===0?'small-square':level===1?'circle':'star';
     }else{
       const ind=firstDesc(pPr,'ind');
       if(ind){
@@ -701,7 +685,7 @@ async function importDocx(file){
     let bodyRows=paras.slice(titleIndex+1);
     // Skip the spacer paragraph immediately after our generated title.
     if(bodyRows.length && !bodyRows[0].text.trim()) bodyRows=bodyRows.slice(1);
-    if(!bodyRows.length) bodyRows=[{level:0,type:'bullet',runs:[]}];
+    if(!bodyRows.length) bodyRows=[{level:0,type:'plain',marker:'small-square',runs:[]}];
 
     isRestoring=true;
     titleInput.value=importedTitle;
@@ -726,7 +710,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:2,
+    version:4,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
@@ -806,7 +790,7 @@ function dataRows(){
   return [...editor.querySelectorAll('.line')].map(line=>{
     const text=line.querySelector('.text');
     const runs=runsFrom(text);
-    return {level:Number(line.dataset.level),type:line.dataset.type,marker:line.dataset.marker||'large-square',runs,text:runs.map(r=>r.text).join('')};
+    return {level:Number(line.dataset.level),type:line.dataset.type,marker:line.dataset.marker||'small-square',runs,text:runs.map(r=>r.text).join('')};
   });
 }
 
@@ -822,6 +806,7 @@ function render(){
     }
     const row=document.createElement('div');
     row.className=r.type==='plain'?'prow plain':`prow lv${r.level+1} ${r.type==='continue'?'cont':''}`;
+    row.dataset.marker=r.marker||'small-square';
     if(r.type!=='plain'){const m=document.createElement('span');m.className='pmark';m.textContent=markerFor(r.level,r.marker);row.appendChild(m);}
     const t=document.createElement('span');renderRuns(t,r.runs);row.appendChild(t);previewBody.appendChild(row);
   });
@@ -842,8 +827,7 @@ function paragraphXml(r){
   else if(r.type==='continue'){
     const left=[360,640,1080,1520][r.level] ?? 0; ppr+=`<w:ind w:left="${left}"/>`;
   }else{
-    const numId=(r.level===0 && r.marker==='small-square')?5:4;
-    ppr+=`<w:numPr><w:ilvl w:val="${r.level}"/><w:numId w:val="${numId}"/></w:numPr>`;
+    ppr+=`<w:numPr><w:ilvl w:val="${r.level}"/><w:numId w:val="4"/></w:numPr>`;
   }
   return `<w:p><w:pPr>${ppr}</w:pPr>${r.runs.map(runXml).join('')}</w:p>`;
 }
@@ -862,32 +846,21 @@ async function patchNumbering(zip){
 
   let xml=await f.async('string');
 
-  function makeAbstract(id,firstMark,firstSize){
-    return `<w:abstractNum w:abstractNumId="${id}"><w:multiLevelType w:val="multilevel"/>`+
-      `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="${firstMark}"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="${firstSize}"/><w:szCs w:val="${firstSize}"/></w:rPr></w:lvl>`+
-      `<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="￮"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="640" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
-      `<w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="✦"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1080" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="15"/><w:szCs w:val="15"/></w:rPr></w:lvl>`+
-      `</w:abstractNum>`;
-  }
+  const clean=`<w:abstractNum w:abstractNumId="3"><w:multiLevelType w:val="multilevel"/>`+
+    `<w:lvl w:ilvl="0"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="▪"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="360" w:hanging="360"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
+    `<w:lvl w:ilvl="1"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="○"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="640" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr></w:lvl>`+
+    `<w:lvl w:ilvl="2"><w:start w:val="1"/><w:numFmt w:val="bullet"/><w:lvlText w:val="✦"/><w:lvlJc w:val="left"/><w:pPr><w:ind w:left="1080" w:hanging="440"/></w:pPr><w:rPr><w:rFonts w:ascii="Yu Gothic" w:eastAsia="Yu Gothic" w:hAnsi="Yu Gothic"/><w:sz w:val="15"/><w:szCs w:val="15"/></w:rPr></w:lvl>`+
+    `</w:abstractNum>`;
 
-  // Existing abstractNumId=3 is replaced by the large-square definition.
   const a=xml.indexOf('<w:abstractNum w:abstractNumId="3"');
   if(a>=0){
     const ae=xml.indexOf('</w:abstractNum>',a);
-    if(ae>=0) xml=xml.slice(0,a)+makeAbstract(3,'■',22)+xml.slice(ae+16);
+    if(ae>=0) xml=xml.slice(0,a)+clean+xml.slice(ae+16);
   }
 
-  // Add a second numbering definition for the small square at the same indent.
-  if(!xml.includes('w:abstractNumId="4"')){
-    const pos=xml.indexOf('<w:num ');
-    xml=xml.slice(0,pos)+makeAbstract(4,'￭',16)+xml.slice(pos);
-  }
-
-  // numId=5 points to abstractNumId=4.
-  if(!xml.includes('<w:num w:numId="5"')){
-    const end=xml.indexOf('</w:numbering>');
-    xml=xml.slice(0,end)+'<w:num w:numId="5"><w:abstractNumId w:val="4"/></w:num>'+xml.slice(end);
-  }
+  // Remove custom stale definitions from prior versions.
+  xml=xml.replace(/<w:abstractNum w:abstractNumId="99"[\s\S]*?<\/w:abstractNum>/g,'');
+  xml=xml.replace(/<w:num w:numId="99"[\s\S]*?<\/w:num>/g,'');
 
   zip.file('word/numbering.xml',xml);
 }
