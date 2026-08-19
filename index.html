@@ -38,16 +38,16 @@ body{margin:0;padding:20px}
 .level-group .bullet-choice{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:15px;min-width:38px}
 
 .help{font-size:12px;color:#777;line-height:1.55;margin:0 0 10px}
-.editor{border:1px solid #bfc4cc;border-radius:9px;min-height:470px;padding:14px;background:#fff}
+.editor{border:1px solid #bfc4cc;border-radius:9px;min-height:470px;padding:14px;background:#fff;cursor:text}
 .editor:focus-within{border-color:#555;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
-.line{display:grid;grid-template-columns:1.65em 1fr;align-items:start;min-height:1.7em;font-size:15px;line-height:1.7}
+.line{display:grid;grid-template-columns:1.65em minmax(0,1fr);align-items:start;min-height:1.7em;font-size:15px;line-height:1.7;cursor:text}
 .line.lv1{padding-left:0}
 .line.lv2{padding-left:1.55em}
 .line.lv3{padding-left:3.1em}
-.line.plain{display:block;padding-left:0}
+.line.plain{display:block;padding-left:0;min-height:1.7em;cursor:text}
 .line.cont .marker{visibility:hidden}
 .marker{user-select:none;color:#222;font-family:"Yu Gothic","YuGothic",sans-serif;font-size:1em;line-height:1.7}
-.text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:inline-block;min-height:1.7em;width:100%;vertical-align:top}
+.text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:block;min-height:1.7em;width:100%;vertical-align:top;cursor:text}
 .text:empty:before{content:"";color:#aaa;pointer-events:none}
 .line:not(.first) .text:empty:before{content:""}
 .actions{display:flex;gap:8px;margin-top:12px}
@@ -360,13 +360,80 @@ function insertAfterCurrent(type){
   line.after(row);placeCaret(text,false);render();
 }
 
+
+function getCaretTextOffset(el){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount)return 0;
+  const range=sel.getRangeAt(0);
+  if(!(el.contains(range.startContainer) || range.startContainer===el))return 0;
+
+  const pre=document.createRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(range.startContainer,range.startOffset);
+  return (pre.toString()||'').length;
+}
+
+function setCaretTextOffset(el,offset){
+  el.focus({preventScroll:true});
+  const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT);
+  let remaining=Math.max(0,offset);
+  let node;
+
+  while((node=walker.nextNode())){
+    const len=node.nodeValue.length;
+    if(remaining<=len){
+      const r=document.createRange();
+      r.setStart(node,remaining);
+      r.collapse(true);
+      const sel=window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      savedSelection=r.cloneRange();
+      return;
+    }
+    remaining-=len;
+  }
+
+  placeCaret(el,true);
+}
+
+function moveCaretVertical(line,direction){
+  const target=direction<0?line.previousElementSibling:line.nextElementSibling;
+  if(!target || !target.classList.contains('line'))return false;
+
+  const from=line.querySelector('.text');
+  const to=target.querySelector('.text');
+  if(!from || !to)return false;
+
+  const offset=getCaretTextOffset(from);
+  const targetLen=(to.textContent||'').length;
+  setCaretTextOffset(to,Math.min(offset,targetLen));
+  updateLevelButtons(target);
+  saveEditorSelection();
+  return true;
+}
+
 editor.addEventListener('keydown',e=>{
   const text=e.target.closest('.text'); if(!text)return;
+  const line=text.closest('.line');
+
+  if(e.key==='ArrowUp'){
+    if(moveCaretVertical(line,-1)){
+      e.preventDefault();
+      return;
+    }
+  }
+
+  if(e.key==='ArrowDown'){
+    if(moveCaretVertical(line,1)){
+      e.preventDefault();
+      return;
+    }
+  }
   if(e.key==='Enter'){
     e.preventDefault();
 
     // Enter は常に「第0階層・記号なし」の新しい行。
-    const line=text.closest('.line');
     const sel=window.getSelection();
     const range=sel.rangeCount?sel.getRangeAt(0):null;
     let trailing=document.createDocumentFragment();
@@ -398,7 +465,6 @@ editor.addEventListener('keydown',e=>{
     return;
   }
   if(e.key==='Backspace' && !e.shiftKey){
-    const line=text.closest('.line');
     const sel=window.getSelection();
 
     let caretAtStart=false;
@@ -464,6 +530,19 @@ editor.addEventListener('keydown',e=>{
 editor.addEventListener('input',()=>{
   saveEditorSelection();
   render();
+});
+editor.addEventListener('mousedown',e=>{
+  const line=e.target.closest('.line');
+  if(!line)return;
+  const t=line.querySelector('.text');
+  if(!t)return;
+
+  if((t.textContent||'').length===0){
+    e.preventDefault();
+    placeCaret(t,false);
+    updateLevelButtons(line);
+    saveEditorSelection();
+  }
 });
 editor.addEventListener('keyup',saveEditorSelection);
 editor.addEventListener('mouseup',saveEditorSelection);
@@ -576,7 +655,29 @@ editor.addEventListener('paste',e=>{
     saveEditorSelection();
   }
 });
-editor.addEventListener('click',()=>{ const l=currentLine(); if(l){ editor.querySelectorAll('.line').forEach(x=>x.classList.toggle('selected',x===l)); updateLevelButtons(l); saveEditorSelection(); } });
+editor.addEventListener('click',e=>{
+  let line=e.target.closest('.line');
+
+  // 入力欄の余白をクリックした場合は、最後の行へフォーカス。
+  if(!line && e.target===editor){
+    line=editor.lastElementChild;
+    const t=line?.querySelector('.text');
+    if(t) placeCaret(t,true);
+  }
+
+  if(line){
+    const t=line.querySelector('.text');
+
+    // 空行なら、行内のどこをクリックしてもカーソルを出す。
+    if(t && (t.textContent||'').length===0){
+      placeCaret(t,false);
+    }
+
+    editor.querySelectorAll('.line').forEach(x=>x.classList.toggle('selected',x===line));
+    updateLevelButtons(line);
+    saveEditorSelection();
+  }
+});
 
 function setSelectedLevel(uiLevel,markerChoice=null){
   const line=currentLine();
@@ -676,7 +777,7 @@ document.getElementById('todayTitleBtn').addEventListener('mousedown',e=>{
 });
 
 
-const STORAGE_KEY='stageHandoverEditorState_v10';
+const STORAGE_KEY='stageHandoverEditorState_v12';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -707,7 +808,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:10,
+      version:12,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -875,7 +976,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:10,
+    version:12,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
