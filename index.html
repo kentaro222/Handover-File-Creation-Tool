@@ -38,16 +38,16 @@ body{margin:0;padding:20px}
 .level-group .bullet-choice{font-family:"Yu Gothic","YuGothic",sans-serif;font-size:15px;min-width:38px}
 
 .help{font-size:12px;color:#777;line-height:1.55;margin:0 0 10px}
-.editor{border:1px solid #bfc4cc;border-radius:9px;min-height:470px;padding:14px;background:#fff;cursor:text}
+.editor{border:1px solid #bfc4cc;border-radius:9px;min-height:470px;padding:14px;background:#fff}
 .editor:focus-within{border-color:#555;box-shadow:0 0 0 3px rgba(0,0,0,.06)}
-.line{display:grid;grid-template-columns:1.65em minmax(0,1fr);align-items:start;min-height:1.7em;font-size:15px;line-height:1.7;cursor:text}
+.line{display:grid;grid-template-columns:1.65em 1fr;align-items:start;min-height:1.7em;font-size:15px;line-height:1.7}
 .line.lv1{padding-left:0}
 .line.lv2{padding-left:1.55em}
 .line.lv3{padding-left:3.1em}
-.line.plain{display:block;padding-left:0;min-height:1.7em;cursor:text}
+.line.plain{display:block;padding-left:0}
 .line.cont .marker{visibility:hidden}
 .marker{user-select:none;color:#222;font-family:"Yu Gothic","YuGothic",sans-serif;font-size:1em;line-height:1.7}
-.text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:block;min-height:1.7em;width:100%;vertical-align:top;cursor:text}
+.text{outline:none;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;caret-color:#111;display:inline-block;min-height:1.7em;width:100%;vertical-align:top}
 .text:empty:before{content:"";color:#aaa;pointer-events:none}
 .line:not(.first) .text:empty:before{content:""}
 .actions{display:flex;gap:8px;margin-top:12px}
@@ -148,8 +148,9 @@ body{padding:8px}
       <div class="label">本文</div>
       <div class="tip">
         <b>基本操作：</b>
+        最初は文章入力欄の左上付近をクリックしてカーソルを出してください。　
         <kbd>Enter</kbd> 第0階層・記号なしで改行　
-        行頭で <kbd>Backspace</kbd> 本文に戻す
+        行頭で <kbd>Backspace</kbd> 前の行へ戻る
       </div>
 
       <div class="help">箇条書きは「￭」「￮」「✦」の3種類です。「・」「・・」「・・・」の記法は、複数行テキストを貼り付けたときだけ自動変換します。直接入力した「・」はそのまま文字として残ります。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
@@ -531,47 +532,8 @@ editor.addEventListener('input',()=>{
   saveEditorSelection();
   render();
 });
-editor.addEventListener('mousedown',e=>{
-  // 左クリックだけを補助する。
-  // 右クリックはブラウザ標準のコンテキストメニュー（貼り付け等）に完全に任せる。
-  if(e.button!==0)return;
-
-  const line=e.target.closest('.line');
-  if(!line)return;
-  const t=line.querySelector('.text');
-  if(!t)return;
-
-  if((t.textContent||'').length===0){
-    e.preventDefault();
-    placeCaret(t,false);
-    updateLevelButtons(line);
-    saveEditorSelection();
-  }
-});
 editor.addEventListener('keyup',saveEditorSelection);
 editor.addEventListener('mouseup',saveEditorSelection);
-
-editor.addEventListener('contextmenu',e=>{
-  let line=e.target.closest('.line');
-
-  // 入力欄の余白で右クリックした場合は最後の行を対象にする。
-  if(!line && e.target===editor){
-    line=editor.lastElementChild;
-  }
-  if(!line)return;
-
-  const t=line.querySelector('.text');
-  if(!t)return;
-
-  // 空行では右クリック位置そのものに文字位置が存在しないため、
-  // 行頭へカーソルを置く。ただし preventDefault はしない。
-  if((t.textContent||'').length===0){
-    placeCaret(t,false);
-    updateLevelButtons(line);
-    saveEditorSelection();
-  }
-});
-
 
 
 function parsePastedLine(text){
@@ -681,29 +643,7 @@ editor.addEventListener('paste',e=>{
     saveEditorSelection();
   }
 });
-editor.addEventListener('click',e=>{
-  let line=e.target.closest('.line');
-
-  // 入力欄の余白をクリックした場合は、最後の行へフォーカス。
-  if(!line && e.target===editor){
-    line=editor.lastElementChild;
-    const t=line?.querySelector('.text');
-    if(t) placeCaret(t,true);
-  }
-
-  if(line){
-    const t=line.querySelector('.text');
-
-    // 空行なら、行内のどこをクリックしてもカーソルを出す。
-    if(t && (t.textContent||'').length===0){
-      placeCaret(t,false);
-    }
-
-    editor.querySelectorAll('.line').forEach(x=>x.classList.toggle('selected',x===line));
-    updateLevelButtons(line);
-    saveEditorSelection();
-  }
-});
+editor.addEventListener('click',()=>{ const l=currentLine(); if(l){ editor.querySelectorAll('.line').forEach(x=>x.classList.toggle('selected',x===l)); updateLevelButtons(l); saveEditorSelection(); } });
 
 function setSelectedLevel(uiLevel,markerChoice=null){
   const line=currentLine();
@@ -750,7 +690,6 @@ function updateLevelButtons(line=currentLine()){
 
 document.querySelectorAll('.levelbtn').forEach(btn=>{
   btn.addEventListener('mousedown',e=>{
-    if(e.button!==0)return;
     e.preventDefault();
     restoreEditorSelection();
     setSelectedLevel(Number(btn.dataset.level),btn.dataset.marker||null);
@@ -758,7 +697,6 @@ document.querySelectorAll('.levelbtn').forEach(btn=>{
   });
 });
 document.getElementById('noMarkerBtn').addEventListener('mousedown',e=>{
-  if(e.button!==0)return;
   e.preventDefault();
   restoreEditorSelection();
   toggleNoMarker();
@@ -767,7 +705,6 @@ document.getElementById('noMarkerBtn').addEventListener('mousedown',e=>{
 
 document.querySelectorAll('.mirror-no-marker').forEach(btn=>{
   btn.addEventListener('mousedown',e=>{
-    if(e.button!==0)return;
     e.preventDefault();
     restoreEditorSelection();
     toggleNoMarker();
@@ -782,17 +719,17 @@ function fmt(cmd,value=null){
   document.execCommand(cmd,false,value);
   render();
 }
-document.getElementById('boldBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
-document.getElementById('redBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
-document.getElementById('blackBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
+document.getElementById('boldBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
+document.getElementById('redBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
+document.getElementById('blackBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
 document.querySelectorAll('.mirror-bold').forEach(btn=>{
-  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
+  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
 });
 document.querySelectorAll('.mirror-red').forEach(btn=>{
-  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
+  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
 });
 document.querySelectorAll('.mirror-black').forEach(btn=>{
-  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
+  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
 });
 
 titleInput.addEventListener('input',render);
@@ -806,7 +743,7 @@ document.getElementById('todayTitleBtn').addEventListener('mousedown',e=>{
 });
 
 
-const STORAGE_KEY='stageHandoverEditorState_v13';
+const STORAGE_KEY='stageHandoverEditorState_v16';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -837,7 +774,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:13,
+      version:16,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -1005,7 +942,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:13,
+    version:16,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
