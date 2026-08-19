@@ -153,7 +153,7 @@ body{padding:8px}
         行頭で <kbd>Backspace</kbd> 前の行へ戻る
       </div>
 
-      <div class="help">箇条書きは「￭」「￮」「✦」の3種類です。「・」「・・」「・・・」の記法は、複数行テキストを貼り付けたときだけ自動変換します。直接入力した「・」はそのまま文字として残ります。 「・形式でコピー」で同じ記法に戻せます。記号なしのインデント行は「・- / ・・- / ・・・-」で表します。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
+      <div class="help">箇条書きは「￭」「￮」「✦」の3種類です。「・」「・・」「・・・」「・-」「・・-」「・・・-」の記法は、貼り付け時だけ自動変換します。1行だけの貼り付けにも対応します。直接入力した「・」はそのまま文字として残ります。 「・形式でコピー」で同じ記法に戻せます。記号なしのインデント行は「・- / ・・- / ・・・-」で表します。複数行を貼り付けた場合は自動で別行に分かれます。「本文」はインデントなしです。Enterは第0階層の記号なし行に戻ります。編集内容はこのブラウザ内に自動保存されます。「バックアップ」は別ファイルとして保存できます。</div>
 
       <div class="toolbar">
         <div class="toolbar-primary">
@@ -564,91 +564,94 @@ editor.addEventListener('paste',e=>{
   const plain=(e.clipboardData || window.clipboardData)?.getData('text/plain');
   if(plain==null)return;
 
-  // 複数行ペーストは、1つの編集行の中にまとめず、
-  // アプリ上の独立した行として分解する。
-  if(/\r|\n/.test(plain)){
-    e.preventDefault();
+  // 貼り付け時だけ ・ / ・・ / ・・・ / ・- / ・・- / ・・・- を解釈する。
+  // 1行貼り付けでも複数行貼り付けでも同じ。
+  e.preventDefault();
 
-    const line=target.closest('.line');
-    const sel=window.getSelection();
-    const range=sel && sel.rangeCount ? sel.getRangeAt(0) : null;
+  const line=target.closest('.line');
+  const sel=window.getSelection();
+  const range=sel && sel.rangeCount ? sel.getRangeAt(0) : null;
 
-    let beforeText='', afterText='';
-    if(range && target.contains(range.startContainer)){
-      const before=document.createRange();
-      before.selectNodeContents(target);
-      before.setEnd(range.startContainer,range.startOffset);
-      beforeText=before.cloneContents().textContent||'';
+  let beforeText='', afterText='';
+  if(range && target.contains(range.startContainer)){
+    const before=document.createRange();
+    before.selectNodeContents(target);
+    before.setEnd(range.startContainer,range.startOffset);
+    beforeText=before.cloneContents().textContent||'';
 
-      const after=document.createRange();
-      after.setStart(range.startContainer,range.startOffset);
-      after.selectNodeContents(target);
-      afterText=after.cloneContents().textContent||'';
-    }else{
-      beforeText=target.textContent||'';
-    }
-
-    const pasted=plain.replace(/\r\n?/g,'\n').split('\n');
-    const first=pasted.shift() ?? '';
-
-    // 現在行には貼り付けの1行目だけを入れる
-    target.textContent=beforeText + first;
-
-    let prev=line;
-
-    // 貼り付け先が行頭なら、1行目も ・/・・/・・・ を解釈する
-    if(beforeText===''){
-      const parsed=parsePastedLine(first);
-      if(parsed.type==='bullet' || parsed.type==='continue'){
-        const converted=rebuildLine(line,{
-          level:parsed.level,
-          type:parsed.type,
-          marker:parsed.marker
-        });
-        converted.querySelector('.text').textContent=parsed.body;
-        prev=converted;
-      }
-    }
-
-    // 2行目以降も、・/・・/・・・なら箇条書きとして解釈する
-    for(const pastedLine of pasted){
-      const parsed=parsePastedLine(pastedLine);
-
-      const row=document.createElement('div');
-      row.className=`line lv${parsed.level+1} ${parsed.type==='plain'?'plain':parsed.type==='continue'?'cont':''}`;
-      row.dataset.level=parsed.level;
-      row.dataset.type=parsed.type;
-      row.dataset.marker=parsed.marker;
-
-      if(parsed.type!=='plain'){
-        const mark=document.createElement('span');
-        mark.className='marker';
-        mark.textContent=markerFor(parsed.level,parsed.marker);
-        row.appendChild(mark);
-      }
-
-      const t=document.createElement('span');
-      t.className='text';
-      t.contentEditable='true';
-      t.spellcheck=false;
-      t.textContent=parsed.body;
-      row.appendChild(t);
-
-      prev.after(row);
-      prev=row;
-    }
-
-    // 元のカーソル位置より後ろにあった文字は最後の行の末尾へ戻す
-    const lastText=prev.querySelector('.text');
-    if(lastText){
-      lastText.textContent=(lastText.textContent||'') + afterText;
-      placeCaret(lastText,true);
-    }
-
-    render();
-    updateLevelButtons(prev);
-    saveEditorSelection();
+    const after=document.createRange();
+    after.setStart(range.startContainer,range.startOffset);
+    after.selectNodeContents(target);
+    afterText=after.cloneContents().textContent||'';
+  }else{
+    beforeText=target.textContent||'';
   }
+
+  const pasted=plain.replace(/\r\n?/g,'\n').split('\n');
+  const first=pasted.shift() ?? '';
+
+  // 行頭に貼り付ける場合は、1行目も記法を解釈する。
+  let prev=line;
+  if(beforeText===''){
+    const parsed=parsePastedLine(first);
+
+    if(parsed.type==='plain'){
+      target.textContent=parsed.body;
+    }else{
+      const converted=rebuildLine(line,{
+        level:parsed.level,
+        type:parsed.type,
+        marker:parsed.marker
+      });
+      converted.querySelector('.text').textContent=parsed.body;
+      prev=converted;
+    }
+  }else{
+    // 行の途中に貼り付けた場合は記法として解釈せず、そのまま文字として挿入。
+    target.textContent=beforeText + first;
+  }
+
+  // 2行目以降は、各行ごとに記法を解釈。
+  for(const pastedLine of pasted){
+    const parsed=parsePastedLine(pastedLine);
+
+    const row=document.createElement('div');
+    row.className=`line lv${parsed.level+1} ${
+      parsed.type==='plain'?'plain':
+      parsed.type==='continue'?'cont':''
+    }`;
+    row.dataset.level=parsed.level;
+    row.dataset.type=parsed.type;
+    row.dataset.marker=parsed.marker;
+
+    if(parsed.type!=='plain'){
+      const mark=document.createElement('span');
+      mark.className='marker';
+      mark.textContent=markerFor(parsed.level,parsed.marker);
+      row.appendChild(mark);
+    }
+
+    const t=document.createElement('span');
+    t.className='text';
+    t.contentEditable='true';
+    t.spellcheck=false;
+    t.textContent=parsed.body;
+    row.appendChild(t);
+
+    prev.after(row);
+    prev=row;
+  }
+
+  // 元のカーソルより後ろにあった文字は最後の貼り付け行へ戻す。
+  const lastText=prev.querySelector('.text');
+  if(lastText){
+    lastText.textContent=(lastText.textContent||'') + afterText;
+    placeCaret(lastText,true);
+  }
+
+  render();
+  updateLevelButtons(prev);
+  saveEditorSelection();
 });
 editor.addEventListener('click',()=>{ const l=currentLine(); if(l){ editor.querySelectorAll('.line').forEach(x=>x.classList.toggle('selected',x===l)); updateLevelButtons(l); saveEditorSelection(); } });
 
@@ -750,7 +753,7 @@ document.getElementById('todayTitleBtn').addEventListener('mousedown',e=>{
 });
 
 
-const STORAGE_KEY='stageHandoverEditorState_v17';
+const STORAGE_KEY='stageHandoverEditorState_v18';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -781,7 +784,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:17,
+      version:18,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -987,7 +990,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:17,
+    version:18,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
