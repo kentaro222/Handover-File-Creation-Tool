@@ -532,6 +532,10 @@ editor.addEventListener('input',()=>{
   render();
 });
 editor.addEventListener('mousedown',e=>{
+  // 左クリックだけを補助する。
+  // 右クリックはブラウザ標準のコンテキストメニュー（貼り付け等）に完全に任せる。
+  if(e.button!==0)return;
+
   const line=e.target.closest('.line');
   if(!line)return;
   const t=line.querySelector('.text');
@@ -546,6 +550,28 @@ editor.addEventListener('mousedown',e=>{
 });
 editor.addEventListener('keyup',saveEditorSelection);
 editor.addEventListener('mouseup',saveEditorSelection);
+
+editor.addEventListener('contextmenu',e=>{
+  let line=e.target.closest('.line');
+
+  // 入力欄の余白で右クリックした場合は最後の行を対象にする。
+  if(!line && e.target===editor){
+    line=editor.lastElementChild;
+  }
+  if(!line)return;
+
+  const t=line.querySelector('.text');
+  if(!t)return;
+
+  // 空行では右クリック位置そのものに文字位置が存在しないため、
+  // 行頭へカーソルを置く。ただし preventDefault はしない。
+  if((t.textContent||'').length===0){
+    placeCaret(t,false);
+    updateLevelButtons(line);
+    saveEditorSelection();
+  }
+});
+
 
 
 function parsePastedLine(text){
@@ -724,6 +750,7 @@ function updateLevelButtons(line=currentLine()){
 
 document.querySelectorAll('.levelbtn').forEach(btn=>{
   btn.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
     e.preventDefault();
     restoreEditorSelection();
     setSelectedLevel(Number(btn.dataset.level),btn.dataset.marker||null);
@@ -731,6 +758,7 @@ document.querySelectorAll('.levelbtn').forEach(btn=>{
   });
 });
 document.getElementById('noMarkerBtn').addEventListener('mousedown',e=>{
+  if(e.button!==0)return;
   e.preventDefault();
   restoreEditorSelection();
   toggleNoMarker();
@@ -739,6 +767,7 @@ document.getElementById('noMarkerBtn').addEventListener('mousedown',e=>{
 
 document.querySelectorAll('.mirror-no-marker').forEach(btn=>{
   btn.addEventListener('mousedown',e=>{
+    if(e.button!==0)return;
     e.preventDefault();
     restoreEditorSelection();
     toggleNoMarker();
@@ -753,17 +782,17 @@ function fmt(cmd,value=null){
   document.execCommand(cmd,false,value);
   render();
 }
-document.getElementById('boldBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
-document.getElementById('redBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
-document.getElementById('blackBtn').onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
+document.getElementById('boldBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
+document.getElementById('redBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
+document.getElementById('blackBtn').onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
 document.querySelectorAll('.mirror-bold').forEach(btn=>{
-  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
+  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('bold');saveEditorSelection();};
 });
 document.querySelectorAll('.mirror-red').forEach(btn=>{
-  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
+  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#FF0000');saveEditorSelection();};
 });
 document.querySelectorAll('.mirror-black').forEach(btn=>{
-  btn.onmousedown=e=>{e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
+  btn.onmousedown=e=>{if(e.button!==0)return;e.preventDefault();restoreEditorSelection();fmt('foreColor','#000000');saveEditorSelection();};
 });
 
 titleInput.addEventListener('input',render);
@@ -777,7 +806,7 @@ document.getElementById('todayTitleBtn').addEventListener('mousedown',e=>{
 });
 
 
-const STORAGE_KEY='stageHandoverEditorState_v12';
+const STORAGE_KEY='stageHandoverEditorState_v13';
 let isRestoring=false;
 let saveTimer=null;
 
@@ -808,7 +837,7 @@ function saveStateNow(){
   if(isRestoring)return;
   try{
     localStorage.setItem(STORAGE_KEY,JSON.stringify({
-      version:12,
+      version:13,
       title:titleInput.value,
       rows:dataRows(),
       savedAt:new Date().toISOString()
@@ -976,7 +1005,7 @@ function backupFilename(){
 function exportBackup(){
   const state={
     app:'stage-handover-editor',
-    version:12,
+    version:13,
     title:titleInput.value,
     rows:dataRows(),
     savedAt:new Date().toISOString()
